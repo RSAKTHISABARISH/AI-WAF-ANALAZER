@@ -38,7 +38,9 @@ const INITIAL_RULES = [
   { id: 3, type: 'ADAPTIVE', name: 'RATE_LIMIT_AUTO', severity: 'MEDIUM' },
 ];
 
-const App = () => {
+import LandingPage from './LandingPage';
+
+const Dashboard = () => {
   const [requests, setRequests] = useState([]);
   const [rules, setRules] = useState(INITIAL_RULES);
   const [stats, setStats] = useState({ total: 1, blocked: 0, status: 'STABLE', efficiency: '100%' });
@@ -97,6 +99,7 @@ const App = () => {
     <div className="app-viewport" style={{ padding: '40px', maxWidth: '1440px', margin: '0 auto', position: 'relative', zIndex: 1, minHeight: '100vh', color: '#fff' }}>
       <div className="mesh-gradient" />
       <div className="cyber-grid" />
+      {/* Existing Dashboard Content... */}
 
       {/* Header */}
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
@@ -390,6 +393,35 @@ const App = () => {
         </div>
       </footer>
     </div>
+  );
+};
+
+const App = () => {
+  const [view, setView] = useState('landing');
+
+  return (
+    <AnimatePresence mode="wait">
+      {view === 'landing' ? (
+        <motion.div
+          key="landing"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0, x: -100 }}
+          transition={{ duration: 0.5 }}
+        >
+          <LandingPage onEnter={() => setView('dashboard')} />
+        </motion.div>
+      ) : (
+        <motion.div
+          key="dashboard"
+          initial={{ opacity: 0, x: 100 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <Dashboard />
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 
