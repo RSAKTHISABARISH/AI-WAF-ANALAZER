@@ -45,51 +45,50 @@ const App = () => {
   const [chartData, setChartData] = useState([]);
   const [isLearning, setIsLearning] = useState(true);
 
-  // Simulation Loop
+  // Python Backend Integration
   useEffect(() => {
-    const interval = setInterval(() => {
-      const isMalicious = Math.random() < 0.15;
-      const newReq = {
-        id: Math.random().toString(36).substr(2, 5).toUpperCase(),
-        time: new Date().toLocaleTimeString([], { hour12: false }),
-        ip: generateIP(),
-        path: paths[Math.floor(Math.random() * paths.length)],
-        status: isMalicious ? 'BLOCKED' : 'ALLOWED',
-        score: isMalicious ? 75 + Math.floor(Math.random() * 25) : Math.floor(Math.random() * 20)
-      };
+    const wsUrl = `ws://${window.location.hostname}:8000/ws`;
+    const socket = new WebSocket(wsUrl);
 
-      setRequests(p => [newReq, ...p].slice(0, 15));
-
-      setStats(p => {
-        const newTotal = p.total + 1;
-        const newBlocked = isMalicious ? p.blocked + 1 : p.blocked;
-        const eff = ((newTotal - newBlocked) / newTotal * 100).toFixed(1);
-        return {
-          total: newTotal,
-          blocked: newBlocked,
-          status: isMalicious ? 'ELEVATED' : (Math.random() > 0.8 ? 'STABLE' : p.status),
-          efficiency: eff
-        };
-      });
-
-      setChartData(p => [...p.slice(-14), { time: newReq.time, r: 1, b: isMalicious ? 1 : 0 }]);
-
-      // Only add adaptive rules if learning is enabled
-      if (isLearning && isMalicious && Math.random() > 0.8 && rules.length < 12) {
-        setRules(r => [{ id: Date.now(), type: 'ADAPTIVE', name: `SIG_${newReq.id}`, severity: 'HIGH' }, ...r]);
+    socket.onmessage = (event) => {
+      const data = json.parse(event.data);
+      if (data.type === 'TRAFFIC_UPDATE') {
+        setRequests(p => [data.request, ...p].slice(0, 15));
+        setStats(data.stats);
+        setRules(data.rules);
+        setChartData(p => [...p.slice(-14), { 
+          time: data.request.time, 
+          r: 1, 
+          b: data.request.status === 'BLOCKED' ? 1 : 0 
+        }]);
       }
-    }, 2000);
-    return () => clearInterval(interval);
-  }, [isLearning, rules.length]);
+    };
 
-  const handleFlush = useCallback(() => {
-    setRules(INITIAL_RULES);
+    socket.onerror = (error) => {
+      console.error('WebSocket Error:', error);
+    };
+
+    return () => socket.close();
   }, []);
 
-  const handlePurge = useCallback(() => {
-    setRequests([]);
-    setStats(p => ({ ...p, total: 1, blocked: 0, efficiency: 100 }));
-    setChartData([]);
+  const handleFlush = useCallback(async () => {
+    try {
+      await fetch('http://localhost:8000/flush', { method: 'POST' });
+    } catch (e) {
+      console.error('Flush failed', e);
+      setRules(INITIAL_RULES);
+    }
+  }, []);
+
+  const handlePurge = useCallback(async () => {
+    try {
+      await fetch('http://localhost:8000/purge', { method: 'POST' });
+    } catch (e) {
+      console.error('Purge failed', e);
+      setRequests([]);
+      setStats({ total: 1, blocked: 0, status: 'STABLE', efficiency: 100 });
+      setChartData([]);
+    }
   }, []);
 
   return (
