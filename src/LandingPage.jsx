@@ -100,14 +100,21 @@ const LandingPage = ({ onEnter }) => {
             fontSize: '72px', 
             fontWeight: 900, 
             lineHeight: 1.1, 
-            marginBottom: '30px',
+            marginBottom: '20px',
             letterSpacing: '-3px',
-            background: 'linear-gradient(to bottom, #0f172a, #334155)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent'
+            color: '#0f172a'
           }}>
             Secure Your Digital Asset <br /> With Behavioral AI.
           </h1>
+          
+          <div style={{ marginBottom: '40px' }}>
+            <img 
+              src="file:///C:/Users/Sakthi/.gemini/antigravity/brain/b31e7563-4542-4040-8002-d50653e50885/ai_waf_hero_mesh_1773376839142.png" 
+              alt="AI WAF Shield"
+              style={{ width: '100%', maxWidth: '800px', borderRadius: '24px', boxShadow: '0 30px 60px rgba(0,102,255,0.1)' }}
+            />
+          </div>
+
           <p style={{ 
             fontSize: '18px', 
             color: '#64748b', 

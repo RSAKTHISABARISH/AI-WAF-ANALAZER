@@ -50,7 +50,8 @@ const Dashboard = () => {
 
   // Python Backend Integration
   useEffect(() => {
-    const wsUrl = `ws://${window.location.hostname}:8000/ws`;
+    // Explicitly use localhost for local development
+    const wsUrl = 'ws://localhost:8000/ws';
     const socket = new WebSocket(wsUrl);
 
     socket.onmessage = (event) => {
