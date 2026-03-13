@@ -41,9 +41,10 @@ const INITIAL_RULES = [
 const App = () => {
   const [requests, setRequests] = useState([]);
   const [rules, setRules] = useState(INITIAL_RULES);
-  const [stats, setStats] = useState({ total: 1, blocked: 0, status: 'STABLE', efficiency: 100 });
+  const [stats, setStats] = useState({ total: 1, blocked: 0, status: 'STABLE', efficiency: '100%' });
   const [chartData, setChartData] = useState([]);
   const [isLearning, setIsLearning] = useState(true);
+  const [insights, setInsights] = useState([]);
 
   // Python Backend Integration
   useEffect(() => {
@@ -51,11 +52,12 @@ const App = () => {
     const socket = new WebSocket(wsUrl);
 
     socket.onmessage = (event) => {
-      const data = json.parse(event.data);
+      const data = JSON.parse(event.data);
       if (data.type === 'TRAFFIC_UPDATE') {
         setRequests(p => [data.request, ...p].slice(0, 15));
         setStats(data.stats);
         setRules(data.rules);
+        setInsights(data.insights);
         setChartData(p => [...p.slice(-14), { 
           time: data.request.time, 
           r: 1, 
@@ -86,7 +88,7 @@ const App = () => {
     } catch (e) {
       console.error('Purge failed', e);
       setRequests([]);
-      setStats({ total: 1, blocked: 0, status: 'STABLE', efficiency: 100 });
+      setStats({ total: 1, blocked: 0, status: 'STABLE', efficiency: '100%' });
       setChartData([]);
     }
   }, []);
@@ -127,7 +129,7 @@ const App = () => {
         {[
           { label: 'Total Scanned', value: stats.total, icon: Search, color: 'cyan' },
           { label: 'Threats Blocked', value: stats.blocked, icon: Lock, color: 'rose' },
-          { label: 'WAF Efficiency', value: stats.efficiency + '%', icon: ShieldCheck, color: 'emerald' },
+          { label: 'WAF Efficiency', value: stats.efficiency, icon: ShieldCheck, color: 'emerald' },
           { label: 'System Status', value: stats.status, icon: AlertTriangle, color: stats.status === 'STABLE' ? 'emerald' : 'rose' }
         ].map((s, i) => (
           <motion.div key={i} className="glass-panel" style={{ padding: '24px', position: 'relative' }} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
@@ -141,6 +143,77 @@ const App = () => {
             <h2 style={{ fontSize: '24px', fontWeight: 900, color: '#fff', margin: 0 }}>{s.value}</h2>
           </motion.div>
         ))}
+      </div>
+
+      {/* Unique Feature: Threat Origin Map & Insights */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
+        <div className="glass-panel" style={{ padding: '24px', height: '300px', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <h3 style={{ fontSize: '12px', color: '#fff', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Globe size={14} style={{ color: 'var(--accent-cyan)' }} /> GEOSPATIAL THREAT INTELLIGENCE
+            </h3>
+          </div>
+          <div style={{ flex: 1, position: 'relative', background: 'rgba(0,0,0,0.3)', borderRadius: '12px', overflow: 'hidden' }}>
+             <div style={{ position: 'absolute', inset: 0, opacity: 0.1, backgroundImage: 'radial-gradient(circle at 2px 2px, #fff 1px, transparent 0)', backgroundSize: '24px 24px' }} />
+             {requests.filter(r => r.status === 'BLOCKED').map((r, i) => (
+                <motion.div 
+                  key={r.id}
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  style={{ 
+                    position: 'absolute', 
+                    // Mapping lat/lon simulation to % coordinates
+                    left: `${50 + (r.geo.lon / 1.8)}%`, 
+                    top: `${50 - (r.geo.lat / 0.9)}%`,
+                    width: '8px', height: '8px', 
+                    background: 'var(--accent-rose)', 
+                    borderRadius: '50%',
+                    boxShadow: '0 0 10px var(--accent-rose)'
+                  }}
+                >
+                  <motion.div 
+                    animate={{ scale: [1, 3], opacity: [0.5, 0] }}
+                    transition={{ repeat: Infinity, duration: 1.5 }}
+                    style={{ width: '100%', height: '100%', background: 'var(--accent-rose)', borderRadius: '50%' }} 
+                  />
+                  <div style={{ position: 'absolute', top: '12px', left: '12px', fontSize: '8px', whiteSpace: 'nowrap', color: 'var(--accent-rose)', fontWeight: 800 }}>
+                    {r.geo.country.toUpperCase()}
+                  </div>
+                </motion.div>
+             ))}
+          </div>
+        </div>
+
+        <div className="glass-panel" style={{ padding: '24px', height: '300px' }}>
+          <h3 style={{ fontSize: '12px', color: '#fff', margin: 0, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Zap size={14} style={{ color: 'var(--accent-amber)' }} /> NEURAL BEHAVIORAL INSIGHTS
+          </h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <AnimatePresence>
+              {insights.map((insight, i) => (
+                <motion.div 
+                  key={i} 
+                  initial={{ opacity: 0, x: 20 }} 
+                  animate={{ opacity: 1, x: 0 }} 
+                  style={{ 
+                    padding: '12px', 
+                    borderRadius: '10px', 
+                    background: 'rgba(255,170,0,0.05)', 
+                    border: '1px solid rgba(255,170,0,0.1)',
+                    fontSize: '11px',
+                    color: 'var(--accent-amber)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px'
+                  }}
+                >
+                  <TrendingUp size={12} />
+                  {insight.toUpperCase()}
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+        </div>
       </div>
 
       {/* Main Content */}
@@ -195,8 +268,8 @@ const App = () => {
                 <thead>
                   <tr style={{ textAlign: 'left', fontSize: '10px', color: '#64748b', letterSpacing: '1px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                     <th style={{ padding: '16px 24px' }}>TIMESTAMP</th>
-                    <th style={{ padding: '16px 24px' }}>TARGET</th>
-                    <th style={{ padding: '16px 24px' }}>SOURCE IP</th>
+                    <th style={{ padding: '16px 24px' }}>TARGET / SOURCE</th>
+                    <th style={{ padding: '16px 24px' }}>REPUTATION</th>
                     <th style={{ padding: '16px 24px', textAlign: 'center' }}>RISK</th>
                     <th style={{ padding: '16px 24px', textAlign: 'right' }}>ACTION</th>
                   </tr>
@@ -206,8 +279,24 @@ const App = () => {
                     {requests.map((r) => (
                       <motion.tr key={r.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} transition={{ duration: 0.2 }} style={{ borderBottom: '1px solid rgba(255,255,255,0.02)' }}>
                         <td style={{ padding: '16px 24px' }}><span style={{ fontWeight: 700 }}>{r.time}</span></td>
-                        <td style={{ padding: '16px 24px' }}><code style={{ fontSize: '11px', color: '#94a3b8' }}>{r.path}</code></td>
-                        <td style={{ padding: '16px 24px' }}><span style={{ color: 'var(--accent-cyan)', fontWeight: 700 }}>{r.ip}</span></td>
+                        <td style={{ padding: '16px 24px' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <code style={{ fontSize: '11px', color: '#94a3b8' }}>{r.path}</code>
+                            <span style={{ color: 'var(--accent-cyan)', fontSize: '10px', fontWeight: 600 }}>{r.ip} • {r.geo.city}, {r.geo.code}</span>
+                          </div>
+                        </td>
+                        <td style={{ padding: '16px 24px' }}>
+                          <span style={{ 
+                            fontSize: '9px', 
+                            fontWeight: 800, 
+                            color: r.reputation === 'CLEAN' ? 'var(--accent-emerald)' : 'var(--accent-amber)',
+                            padding: '2px 8px',
+                            background: 'rgba(255,255,255,0.05)',
+                            borderRadius: '4px'
+                          }}>
+                            {r.reputation}
+                          </span>
+                        </td>
                         <td align="center" style={{ padding: '16px 24px' }}>
                           <span style={{ fontWeight: 800, color: r.score > 50 ? 'var(--accent-rose)' : '#64748b' }}>{r.score}</span>
                         </td>
@@ -229,12 +318,6 @@ const App = () => {
                   </AnimatePresence>
                 </tbody>
               </table>
-              {requests.length === 0 && (
-                <div style={{ padding: '40px', textAlign: 'center', color: '#64748b', fontSize: '12px' }}>
-                  <Activity size={24} style={{ marginBottom: '12px', opacity: 0.3 }} />
-                  <p>WAITING FOR NETWORK TRAFFIC...</p>
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -275,7 +358,7 @@ const App = () => {
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ fontSize: '10px', color: '#64748b' }}>LATENCY</span>
-                <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--accent-cyan)' }}>2ms</span>
+                <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--accent-cyan)' }}>1ms</span>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginTop: '10px' }}>
                 <button
@@ -302,7 +385,7 @@ const App = () => {
       <footer style={{ marginTop: '60px', paddingTop: '30px', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between' }}>
         <p style={{ fontSize: '9px', color: '#64748b', letterSpacing: '2px', border: 0 }}>© 2026 PROTECTOS • CYBER DEFENSE SYSTEMS</p>
         <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
-          <span style={{ fontSize: '9px', color: '#64748b' }}>LATENCY OPTIMIZED</span>
+          <span style={{ fontSize: '9px', color: '#64748b' }}>ENGINEERING EXCELLENCE</span>
           <Shield size={14} style={{ color: '#64748b' }} />
         </div>
       </footer>

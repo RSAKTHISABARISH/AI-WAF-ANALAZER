@@ -56,7 +56,8 @@ async def websocket_endpoint(websocket: WebSocket):
                 "type": "TRAFFIC_UPDATE",
                 "request": new_request,
                 "stats": stats,
-                "rules": engine.rules
+                "rules": engine.rules,
+                "insights": engine.insights
             })
             
             await asyncio.sleep(2)  # Simulate 2s interval
