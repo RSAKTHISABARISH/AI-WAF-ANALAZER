@@ -104,7 +104,7 @@ const App = () => {
             <Shield size={32} style={{ color: 'var(--accent-cyan)' }} className="animate-pulse-slow" />
           </div>
           <div>
-            <h1 style={{ fontSize: '28px', color: '#fff', margin: 0 }}>PROTECT<span style={{ color: 'var(--accent-cyan)' }}>OS</span></h1>
+            <h1 style={{ fontSize: '28px', color: '#fff', margin: 0 }}>{import.meta.env.VITE_APP_TITLE || 'PROTECT'}<span style={{ color: 'var(--accent-cyan)' }}>OS</span></h1>
             <p style={{ fontSize: '11px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', margin: '4px 0 0 0' }}>
               <Radio size={12} style={{ color: '#10b981' }} className="animate-pulse-slow" />
               NEURAL ADAPTIVE FIREWALL • ACTIVE PROTECTION
